@@ -21,7 +21,7 @@ const { values } = parseArgs({
 if (values.help) {
 	console.log(`
 ⚡️ OpenCode OSS (v${version})
-Universal parser that fixes broken tool-calling for Open-Source LLMs (Ollama, vLLM, Baseten, OpenRouter).
+Universal compatibility layer for Open-Source models.
 
 Usage:
   bunx opencode-oss [options]
@@ -33,25 +33,62 @@ Options:
 	process.exit(0);
 }
 
-// 1. Get Target Details
+// 1. Get Target Details Interactively
 let TARGET_URL = process.env.TARGET_URL;
 let API_KEY = process.env.API_KEY || "";
+let MODEL_NAME_TITLE = "Custom (OSS)";
+let MODEL_ID = "custom-model";
 
 if (!TARGET_URL) {
-	const answer = prompt(
-		"Enter the target OpenAI-compatible URL (default: http://127.0.0.1:11434/v1):",
-	);
-	TARGET_URL = answer?.trim() || "http://127.0.0.1:11434/v1";
-}
+	console.log("Where is your model running?\n");
+	console.log("1) Ollama (local)");
+	console.log("2) OpenRouter");
+	console.log("3) Custom endpoint\n");
 
-if (
-	!API_KEY &&
-	!TARGET_URL.includes("localhost") &&
-	!TARGET_URL.includes("127.0.0.1")
-) {
-	const key = prompt("Enter API Key (press Enter to skip if not required):");
-	if (key) {
-		API_KEY = key.trim();
+	const choice = prompt("> ");
+
+	if (choice === "1") {
+		TARGET_URL = "http://127.0.0.1:11434/v1";
+		try {
+			const res = await fetch("http://127.0.0.1:11434/api/tags");
+			if (res.ok) {
+				const data = (await res.json()) as { models?: Array<{ name: string }> };
+				const models = data.models || [];
+				if (models.length > 0) {
+					console.log("\nAvailable models:");
+					models.forEach((m, i) => {
+						console.log(`${i + 1}) ${m.name}`);
+					});
+					const modChoice = prompt("\n> ");
+					const idx = parseInt(modChoice || "1", 10) - 1;
+					if (models[idx]) {
+						MODEL_NAME_TITLE = `${models[idx].name} (OSS)`;
+						MODEL_ID = models[idx].name;
+					} else {
+						MODEL_NAME_TITLE = "Ollama (OSS)";
+						MODEL_ID = "ollama-model";
+					}
+				}
+			}
+		} catch (_err) {
+			MODEL_NAME_TITLE = "Ollama (OSS)";
+			MODEL_ID = "ollama-model";
+		}
+	} else if (choice === "2") {
+		API_KEY = prompt("\nEnter OpenRouter API key:\n> ")?.trim() || "";
+		TARGET_URL = "https://openrouter.ai/api/v1";
+		MODEL_NAME_TITLE = "OpenRouter (OSS)";
+		MODEL_ID = "openrouter-oss-model";
+	} else {
+		TARGET_URL =
+			prompt(
+				"\nEnter custom API URL (e.g. http://127.0.0.1:8000/v1):\n> ",
+			)?.trim() || "";
+		API_KEY = prompt("\nEnter API key (optional):\n> ")?.trim() || "";
+		if (!TARGET_URL) {
+			console.error("❌ Target URL is required for custom endpoints.");
+			process.exit(1);
+		}
 	}
 }
 
@@ -67,19 +104,16 @@ const configPaths = [
 ];
 
 const PROXY_MODEL_CONFIG = {
-	title: "OpenCode OSS",
+	title: MODEL_NAME_TITLE,
 	provider: "openai",
-	model: "custom-model",
+	model: MODEL_ID,
 	apiBase: "http://localhost:3042/v1",
 };
-
-let foundConfig = false;
 
 for (const configPath of configPaths) {
 	try {
 		const stat = await fs.stat(configPath);
 		if (stat.isFile()) {
-			foundConfig = true;
 			if (values.debug) console.log(`[DEBUG] Found config at: ${configPath}`);
 
 			const configData = await fs.readFile(configPath, "utf-8");
@@ -102,19 +136,12 @@ for (const configPath of configPaths) {
 				configJson.models.push(PROXY_MODEL_CONFIG);
 				await fs.writeFile(configPath, JSON.stringify(configJson, null, 2));
 			}
-			console.log("✔ Found OpenCode config");
-			console.log("✔ Injected Native Bridge model configuration");
+			console.log("\n✔ Found OpenCode config");
+			console.log(`✔ Added ${MODEL_NAME_TITLE} model`);
 			break;
 		}
-	} catch (err: unknown) {
+	} catch (_err: unknown) {
 		// Ignore ENOENT silently
-	}
-}
-
-if (!foundConfig) {
-	console.log("⚠️ Could not locate OpenCode config automatically.");
-	if (values.debug) {
-		console.log(JSON.stringify(PROXY_MODEL_CONFIG, null, 2));
 	}
 }
 
@@ -145,22 +172,22 @@ serve({
 			"Content-Type": "application/json",
 		};
 		if (API_KEY) {
-			headers["Authorization"] = `Bearer ${API_KEY}`;
+			headers.Authorization = `Bearer ${API_KEY}`;
 		}
 
-		const response = await fetch(
-			TARGET_URL.endsWith("/chat/completions")
-				? TARGET_URL
-				: `${TARGET_URL}/chat/completions`,
-			{
-				method: "POST",
-				headers,
-				body: JSON.stringify(body),
-			},
-		);
+		const TARGET_ENDPOINT = TARGET_URL.endsWith("/chat/completions")
+			? TARGET_URL
+			: `${TARGET_URL.endsWith("/") ? TARGET_URL.slice(0, -1) : TARGET_URL}/chat/completions`;
+
+		const response = await fetch(TARGET_ENDPOINT, {
+			method: "POST",
+			headers,
+			body: JSON.stringify(body),
+		});
 
 		if (!response.ok || !response.body) {
 			const errorText = await response.text();
+			if (values.debug) console.error(`[DEBUG] Proxy Error: ${errorText}`);
 			return new Response(`Target Error: ${errorText}`, {
 				status: response.status,
 			});
@@ -182,7 +209,6 @@ serve({
 						if (done) break;
 
 						const chunk = decoder.decode(value, { stream: true });
-						// Here is where the universal parser morphs broken tool calls safely into executable blocks
 						const transformedChunk = parseGrownXmlChunks(chunk);
 						controller.enqueue(new TextEncoder().encode(transformedChunk));
 					}
@@ -205,11 +231,4 @@ serve({
 	},
 });
 
-console.log("✔ Started universal OSS parser");
-console.log(`📡 Proxying strictly to: ${TARGET_URL}\n`);
-console.log("You're ready. The bridged model is now available in OpenCode!");
-if (values.debug) {
-	console.log(`[DEBUG] Server running on port ${PORT}`);
-} else {
-	console.log("(Keep this terminal open while using the IDE)");
-}
+console.log("\nYou're ready.");

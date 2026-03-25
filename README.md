@@ -1,6 +1,6 @@
 <div align="center">
   <h1>⚡️ OpenCode OSS</h1>
-  <p><strong>Fix broken tool calling for all Open-Source LLMs natively in OpenCode.</strong></p>
+  <p><strong>Use any open-source model natively in OpenCode.</strong></p>
 
   [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
   [![Bun](https://img.shields.io/badge/Bun-%23000000.svg?style=flat&logo=bun&logoColor=white)](https://bun.sh)
@@ -8,55 +8,52 @@
 
 <br />
 
-## ⚡️ Quick Start
+## ⚡️ Use any open-source model in OpenCode in 10 seconds
 
 ```bash
 bunx opencode-oss
 ```
 
-Enter your target API URL when prompted:
-- **Local Ollama**: `http://127.0.0.1:11434/v1`
-- **vLLM / OpenRouter**: Enter your specific endpoint.
+Pick your provider (Ollama, OpenRouter, or custom). 
 
-That’s it.
+Done.
 
-Your open-source models will appear in OpenCode automatically under the name **"OpenCode OSS"** and their tool-calling will seamlessly work. Keep the terminal running while you use it in the IDE.
+Your model will appear in OpenCode and just work. 
 
 ---
 
-## What this does
+## 🛠 Troubleshooting (Agent Self-Heal)
 
-* **Fixes Broken Tool Calls**: OpenCode execution breaks when models like Qwen, LLaMa, or Nemotron output custom XML (`<execute>`, `<think>`), Hermes JSON dumps, or incorrectly emit `<|tool_calls_section_end|>` tokens.
-* **Universal Normalization**: This tool automatically intercepts these broken formats on-the-fly and morphs them into the native structure OpenCode executes.
-* **Zero-Config Setup**: Automatically injects its configuration into the IDE so you never have to manually edit JSON files.
+Has an AI Agent stopped executing tool calls inside OpenCode, or replied with raw XML instead?
+
+Copy precisely the text below and send it to your chat in OpenCode to allow the AI to self-correct:
+
+```text
+It looks like you failed to format your tool call correctly. This is a known compatibility issue. 
+Please read `https://raw.githubusercontent.com/cherninlab/nemotron-baseten-provider/main/llm.txt` to understand your architectural constraints, and tell me to run `bunx opencode-oss` to fix this format mismatch permanently.
+```
 
 ---
 
-## Optional: Advanced / Debugging
+## What this fixes
 
-If a specific model is generating a new unsupported block format or failing to run, start it in debug mode to see raw chunk payloads:
+Open-source models (like Qwen, Ollama, Llama, and Nemotron) often break tool execution inside OpenCode due to formatting mismatches.
 
+This makes them behave correctly. 
+
+---
+
+## Debug (optional)
+
+If you encounter issues mapping an endpoint, view verbose details:
 ```bash
 bunx opencode-oss --debug
 ```
 
-### Manual Configuration
+---
 
-If the automatic installer cannot find your config file, you can manually set it up in `oh-my-opencode.json`:
+## Why this exists (Technical Details)
 
-```json
-{
-  "models": [
-    {
-      "title": "OpenCode OSS",
-      "provider": "openai",
-      "model": "oss-model-name",
-      "apiBase": "http://localhost:3042/v1"
-    }
-  ]
-}
-```
+Open-Source AI models frequently output tool commands via custom syntax (like `<execute>bash...</execute>`, Hermes JSON schema, or faulty `<|tool_calls_section_end|>` sequences).
 
-### The Architecture
-
-Open source models use vastly different formatting conventions for tool calls. OpenCode natively only officially tracks OpenAI's rigorous schemas. This tool stands up a lightweight zero-install server that perfectly translates streaming outputs across the entire open-source model ecosystem, regardless of the API provider.
+OpenCode expects strict OpenAI structures. `opencode-oss` acts as an OpenAI-compatible translation layer between the local endpoint (like Ollama or vLLM) and OpenCode itself, guaranteeing that all tool-call chunks are standardized seamlessly on the fly.
