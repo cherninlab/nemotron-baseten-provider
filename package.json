@@ -1,10 +1,10 @@
 {
-	"name": "opencode-nemotron",
+	"name": "opencode-bridge",
 	"version": "1.0.0",
-	"description": "Bunx native streaming parser that integrates Baseten Nemotron XML with OpenCode execution engines.",
+	"description": "Bunx native proxy that fixes broken tool calling in open-source LLMs (Nemotron, Qwen, Ollama) by translating custom XML/JSON into OpenCode execution formats.",
 	"main": "src/index.ts",
 	"bin": {
-		"opencode-nemotron": "./src/cli.ts"
+		"opencode-bridge": "./src/cli.ts"
 	},
 	"scripts": {
 		"test": "bun test",
