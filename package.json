@@ -1,10 +1,10 @@
 {
-	"name": "nemotron-baseten-provider",
+	"name": "opencode-nemotron",
 	"version": "1.0.0",
 	"description": "Bunx native streaming parser that integrates Baseten Nemotron XML with OpenCode execution engines.",
 	"main": "src/index.ts",
 	"bin": {
-		"nemotron-baseten-provider": "./src/cli.ts"
+		"opencode-nemotron": "./src/cli.ts"
 	},
 	"scripts": {
 		"test": "bun test",
