@@ -32,8 +32,17 @@ BASETEN_API_KEY="your_api_key" npx nemotron-baseten-provider
 
 This will instantly spin up a local proxy interceptor at: **`http://localhost:3042/v1`**
 
-### Step 2: Configure OpenCode
-Simply point your environment to the proxy. In your `oh-my-opencode.json` (or standard `opencode.json`), configure your provider:
+### Step 2: Configure OpenCode Automatically
+
+You can auto-inject the model configuration into your global or local OpenCode configurations by simply passing the `--install` flag!
+
+```bash
+bunx nemotron-baseten-provider --install
+```
+
+*(This safely scans for `opencode.json` or `oh-my-opencode.json` config files and inserts the provider block for you!)*
+
+If you prefer to configure it manually, add this to your `oh-my-opencode.json`:
 ```json
 {
   "models": [
