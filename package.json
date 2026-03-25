@@ -1,0 +1,22 @@
+{
+	"name": "nemotron-baseten-provider",
+	"version": "1.0.0",
+	"description": "Bunx native streaming parser that integrates Baseten Nemotron XML with OpenCode execution engines.",
+	"main": "src/index.ts",
+	"bin": {
+		"nemotron-baseten-provider": "./src/cli.ts"
+	},
+	"scripts": {
+		"test": "bun test",
+		"lint": "biome check .",
+		"format": "biome format --write ."
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.9",
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"license": "MIT"
+}
