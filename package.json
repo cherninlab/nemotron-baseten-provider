@@ -1,10 +1,10 @@
 {
-	"name": "opencode-bridge",
+	"name": "opencode-oss",
 	"version": "1.0.0",
 	"description": "Bunx native proxy that fixes broken tool calling in open-source LLMs (Nemotron, Qwen, Ollama) by translating custom XML/JSON into OpenCode execution formats.",
 	"main": "src/index.ts",
 	"bin": {
-		"opencode-bridge": "./src/cli.ts"
+		"opencode-oss": "./src/cli.ts"
 	},
 	"scripts": {
 		"test": "bun test",

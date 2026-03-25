@@ -20,11 +20,11 @@ const { values } = parseArgs({
 
 if (values.help) {
 	console.log(`
-⚡️ OpenCode Bridge (v${version})
+⚡️ OpenCode OSS (v${version})
 Universal parser that fixes broken tool-calling for Open-Source LLMs (Ollama, vLLM, Baseten, OpenRouter).
 
 Usage:
-  bunx opencode-bridge [options]
+  bunx opencode-oss [options]
 
 Options:
   --debug        Show advanced logs
@@ -67,7 +67,7 @@ const configPaths = [
 ];
 
 const PROXY_MODEL_CONFIG = {
-	title: "OpenCode OSS Bridge",
+	title: "OpenCode OSS",
 	provider: "openai",
 	model: "custom-model",
 	apiBase: "http://localhost:3042/v1",
@@ -205,7 +205,7 @@ serve({
 	},
 });
 
-console.log("✔ Started universal local bridge");
+console.log("✔ Started universal OSS parser");
 console.log(`📡 Proxying strictly to: ${TARGET_URL}\n`);
 console.log("You're ready. The bridged model is now available in OpenCode!");
 if (values.debug) {
